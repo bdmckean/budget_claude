@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+    networks:
+      - budget-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:5001/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - budget-network
+
+networks:
+  budget-network:
+    driver: bridge
