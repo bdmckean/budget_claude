@@ -45,3 +45,33 @@
 .upload-button .icon {
   font-size: 1.2rem;
 }
+
+.reset-button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+}
+
+.reset-button:active {
+  transform: translateY(0);
+}
+
+.reset-button .icon {
+  font-size: 1rem;
+}

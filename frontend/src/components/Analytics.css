@@ -1,0 +1,201 @@
+.analytics-container {
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-container h2 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.analytics-section {
+  margin-bottom: 2.5rem;
+}
+
+.analytics-section h3 {
+  font-size: 1.3rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #667eea;
+}
+
+/* Category Summary */
+.category-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.category-item {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.category-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.category-amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Table Styling */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.spending-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.spending-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.spending-table th {
+  padding: 1rem;
+  text-align: right;
+  font-weight: 600;
+}
+
+.spending-table th.category-col,
+.spending-table td.category-cell {
+  text-align: left;
+}
+
+.spending-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.spending-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.spending-table td {
+  padding: 1rem;
+  text-align: right;
+}
+
+.spending-table td.category-cell {
+  text-align: left;
+  font-weight: 500;
+  color: #333;
+}
+
+.spending-table td.amount-cell {
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: #666;
+}
+
+.spending-table td.total-cell {
+  font-weight: 600;
+  color: #667eea;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* Totals row styling */
+.totals-row {
+  background-color: #f9f9f9;
+  font-weight: 600;
+  border-top: 2px solid #667eea;
+}
+
+.totals-row td {
+  color: #333;
+  padding: 1.2rem 1rem;
+}
+
+/* Buttons */
+.refresh-button {
+  width: 100%;
+  padding: 1rem;
+  margin-top: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.refresh-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.refresh-button:active {
+  transform: translateY(0);
+}
+
+.refresh-button .icon {
+  font-size: 1.2rem;
+}
+
+/* Loading and Error States */
+.analytics.loading,
+.analytics.error,
+.analytics.empty {
+  padding: 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 1.1rem;
+}
+
+.analytics.loading {
+  color: #667eea;
+}
+
+.analytics.error {
+  color: #f5576c;
+  background: #fff5f5;
+}
+
+.analytics.empty {
+  color: #999;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .analytics-container {
+    padding: 1rem;
+  }
+
+  .category-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .spending-table {
+    font-size: 0.8rem;
+  }
+
+  .spending-table th,
+  .spending-table td {
+    padding: 0.75rem 0.5rem;
+  }
+}

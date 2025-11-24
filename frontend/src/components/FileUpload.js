@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import './FileUpload.css';
 
-function FileUpload({ onFileUpload }) {
+function FileUpload({ onFileUpload, onReset, hasFile }) {
   const fileInputRef = useRef(null);
 
   const handleClick = () => {
@@ -19,6 +19,12 @@ function FileUpload({ onFileUpload }) {
     }
   };
 
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to reset all mappings for this file?')) {
+      onReset();
+    }
+  };
+
   return (
     <div className="file-upload">
       <h2>Upload File</h2>
@@ -27,6 +33,12 @@ function FileUpload({ onFileUpload }) {
         <span className="icon">📁</span>
         Choose File
       </button>
+      {hasFile && (
+        <button className="reset-button" onClick={handleReset}>
+          <span className="icon">🔄</span>
+          Reset Mappings
+        </button>
+      )}
       <input
         ref={fileInputRef}
         type="file"
