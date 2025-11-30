@@ -19,5 +19,8 @@
   "Payment",
   "Travel",
   "Personal",
-  "Amazon"
+  "Amazon",
+  "Books",
+  "Fee",
+  "Auto"
 ]
