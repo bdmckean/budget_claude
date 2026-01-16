@@ -530,6 +530,32 @@ def validate_and_correct_category(category_name):
     }
 
 
+def is_row_valid(row):
+    """
+    Check if a CSV row has the minimum required fields populated.
+
+    Args:
+        row: Dictionary representing a CSV row
+
+    Returns:
+        Boolean indicating if row is valid (has required fields)
+    """
+    # Check for common field names (handle variations)
+    date_field = row.get('Date') or row.get('Transaction Date') or row.get('date')
+    description_field = row.get('Description') or row.get('description')
+    amount_field = row.get('Amount') or row.get('amount')
+
+    # Row is valid if all required fields are present and non-empty
+    if not date_field or not str(date_field).strip():
+        return False
+    if not description_field or not str(description_field).strip():
+        return False
+    if not amount_field or not str(amount_field).strip():
+        return False
+
+    return True
+
+
 def load_progress():
     """Load existing progress from file"""
     if PROGRESS_FILE.exists():
@@ -560,6 +586,8 @@ def health():
 def get_categories():
     """Get list of budget categories"""
     categories = load_categories()
+    # Sort alphabetically (case-insensitive)
+    categories.sort(key=str.lower)
     return jsonify({"categories": categories}), 200
 
 
@@ -581,15 +609,28 @@ def upload_file():
         return jsonify({"error": "No file selected"}), 400
 
     try:
+        # Initialize skipped count
+        skipped_count = 0
+
         # Read file content - check extensions case-insensitively
         filename_lower = file.filename.lower()
         if filename_lower.endswith('.csv'):
             import csv
             lines = file.read().decode('utf-8').split('\n')
             reader = csv.DictReader(lines)
-            rows = list(reader)
+            all_rows = list(reader)
+            # Filter out invalid rows (missing required fields)
+            rows = [row for row in all_rows if is_row_valid(row)]
+            skipped_count = len(all_rows) - len(rows)
+            if skipped_count > 0:
+                print(f"Skipped {skipped_count} incomplete row(s) from CSV", flush=True)
         elif filename_lower.endswith('.json'):
-            rows = json.loads(file.read().decode('utf-8'))
+            all_rows = json.loads(file.read().decode('utf-8'))
+            # Filter out invalid rows
+            rows = [row for row in all_rows if is_row_valid(row)]
+            skipped_count = len(all_rows) - len(rows)
+            if skipped_count > 0:
+                print(f"Skipped {skipped_count} incomplete row(s) from JSON", flush=True)
         else:
             return jsonify({"error": "Unsupported file format. Use CSV or JSON"}), 400
 
@@ -609,6 +650,7 @@ def upload_file():
             if previous_mapping.get("file_hash") == file_hash:
                 # File unchanged - restore previous mappings and skip mapped rows
                 previous_rows = previous_mapping.get("rows", {})
+                restored_count = 0
                 for idx, row in enumerate(rows):
                     row_key = str(idx)
                     if row_key in previous_rows:
@@ -618,6 +660,7 @@ def upload_file():
                             "category": previous_rows[row_key],
                             "mapped": True
                         }
+                        restored_count += 1
                     else:
                         # New or unmapped row
                         progress["rows"][row_key] = {
@@ -625,6 +668,7 @@ def upload_file():
                             "category": None,
                             "mapped": False
                         }
+                print(f"Restored {restored_count} previously mapped rows for '{file.filename}'", flush=True)
             else:
                 # File changed - reset all mappings
                 file_mappings["mappings"][file.filename] = {
@@ -655,12 +699,33 @@ def upload_file():
         save_progress(progress)
         save_file_mappings(file_mappings)
 
-        return jsonify({
+        response_data = {
             "success": True,
             "file_name": file.filename,
             "total_rows": len(rows),
             "progress": progress
-        }), 200
+        }
+
+        # Build informational messages
+        messages = []
+
+        # Add restored mappings info
+        if file.filename in file_mappings["mappings"]:
+            previous_mapping = file_mappings["mappings"][file.filename]
+            if previous_mapping.get("file_hash") == file_hash:
+                restored_count = len([r for r in progress["rows"].values() if r.get("mapped")])
+                if restored_count > 0:
+                    messages.append(f"Restored {restored_count} previously mapped row(s)")
+
+        # Add skipped count info if any rows were skipped
+        if skipped_count > 0:
+            response_data["skipped_rows"] = skipped_count
+            messages.append(f"Skipped {skipped_count} incomplete row(s)")
+
+        if messages:
+            response_data["message"] = " • ".join(messages)
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -1015,6 +1080,8 @@ def confirm_add_category():
 
     # Add new category
     categories.append(corrected_category)
+    # Sort alphabetically (case-insensitive)
+    categories.sort(key=str.lower)
     save_categories(categories)
 
     return jsonify({
@@ -1050,11 +1117,21 @@ def map_row():
     if progress.get("file_name"):
         file_mappings = load_file_mappings()
         file_name = progress["file_name"]
+
+        # Get current file hash from progress or preserve existing
+        rows_data = [row_data.get("data", {}) for row_data in progress["rows"].values()]
+        current_file_hash = get_file_mapping_hash(rows_data)
+
         if file_name not in file_mappings["mappings"]:
             file_mappings["mappings"][file_name] = {
-                "file_hash": "",
+                "file_hash": current_file_hash,
                 "rows": {}
             }
+        else:
+            # Update hash if not set
+            if not file_mappings["mappings"][file_name].get("file_hash"):
+                file_mappings["mappings"][file_name]["file_hash"] = current_file_hash
+
         file_mappings["mappings"][file_name]["rows"][row_key] = category
         save_file_mappings(file_mappings)
 
@@ -1141,19 +1218,30 @@ def get_analytics():
             category = row_data.get("category")
             amount_str = row_info.get("Amount", "0")
             date_str = row_info.get("Transaction Date", "")
+            transaction_type = row_info.get("Type", "").lower()
 
-            # Parse amount (handle negative values)
+            # Parse amount
             try:
                 amount = float(amount_str)
             except (ValueError, TypeError):
                 continue
 
-            # Skip credits/payments (positive amounts)
-            if amount >= 0:
+            # Skip payments/credits based on Type field or category
+            # Check Type field if present (e.g., "Payment", "Credit")
+            if transaction_type in ['payment', 'credit', 'refund']:
+                continue
+
+            # Skip if categorized as Payment
+            if category and category.lower() == 'payment':
                 continue
 
             # Convert to absolute value for spending
+            # (handles both positive and negative expense formats)
             amount = abs(amount)
+
+            # Skip zero amounts
+            if amount == 0:
+                continue
 
             # Parse date - expect format like "12/30/2024"
             if not date_str:

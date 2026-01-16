@@ -207,6 +207,16 @@ function MappingInterface({ progress, categories, onMapRow, onAddCategory, onCon
 
   return (
     <div className="mapping-interface">
+      <div className="file-info">
+        <div className="file-name">
+          <span className="file-icon">📄</span>
+          <span className="file-text">{progress.file_name || 'Unknown File'}</span>
+        </div>
+        <div className="file-stats">
+          {progress.total_rows} total rows • {rows.filter(r => r.mapped).length} mapped • {unmappedRows.length} remaining
+        </div>
+      </div>
+
       <div className="progress-bar-container">
         <div className="progress-label">
           Progress: {currentIndex + 1} of {unmappedRows.length}

@@ -7,9 +7,8 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "5001:5000"
-    environment:
-      - FLASK_ENV=development
-      - FLASK_APP=app.py
+    env_file:
+      - backend/.env
     volumes:
       - ./backend/categories.json:/app/categories.json
       - ./mapping_progress.json:/mapping_progress.json
@@ -24,7 +23,7 @@ services:
       args:
         - REACT_APP_API_URL=http://localhost:5001/api
     ports:
-      - "3000:3000"
+      - "3002:3000"
     depends_on:
       - backend
     networks:

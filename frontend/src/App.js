@@ -13,6 +13,7 @@ function App() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(null);
   const [currentPage, setCurrentPage] = useState('mapping'); // 'mapping' or 'analytics'
 
   useEffect(() => {
@@ -73,6 +74,13 @@ function App() {
       const res = await axios.post(`${API_BASE_URL}/upload`, formData);
       setProgress(res.data.progress);
       setError(null);
+
+      // Display info message if provided
+      if (res.data.message) {
+        setInfoMessage(res.data.message);
+        // Auto-clear after 5 seconds
+        setTimeout(() => setInfoMessage(null), 5000);
+      }
     } catch (err) {
       console.error('Upload error:', err);
       let errorMsg = 'Failed to upload file: ' + err.message;
@@ -81,6 +89,7 @@ function App() {
         errorMsg = 'Upload error: ' + JSON.stringify(err.response.data);
       }
       setError(errorMsg);
+      setInfoMessage(null);
     }
   };
 
@@ -218,6 +227,7 @@ function App() {
       </header>
 
       {error && <div className="error-message">{error}</div>}
+      {infoMessage && <div className="info-message">{infoMessage}</div>}
 
       <main className="app-main">
         {currentPage === 'mapping' ? (
