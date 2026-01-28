@@ -23,8 +23,8 @@ A budget planning app that helps you categorize and analyze your spending. Built
 docker-compose up --build
 
 # The app will be available at:
-# Frontend: http://localhost:3000
-# Backend: http://localhost:5000/api
+# Frontend: http://localhost:3002
+# Backend: http://localhost:5001/api
 ```
 
 ### Development without Docker

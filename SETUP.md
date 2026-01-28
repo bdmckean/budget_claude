@@ -4,7 +4,7 @@
 
 ### Prerequisites
 - Docker and Docker Compose installed
-- Available ports: 3000 (frontend), 5000 (backend)
+- Available ports: 3002 (frontend), 5001 (backend)
 
 ### Steps
 1. Clone the repository and navigate to the project directory
@@ -12,8 +12,8 @@
    ```bash
    docker-compose up --build
    ```
-3. Open your browser and go to `http://localhost:3000`
-4. Your backend API will be available at `http://localhost:5000/api`
+3. Open your browser and go to `http://localhost:3002`
+4. Your backend API will be available at `http://localhost:5001/api`
 
 ### Stopping the App
 ```bash
