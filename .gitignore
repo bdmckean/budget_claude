@@ -1,6 +1,15 @@
-# Workiog files
-*.json
-backend/categories.json
+# Working files
+# Note: Avoid using *.json as it's too broad. Be specific about which JSON files to ignore.
+# backend/categories.json  # Uncomment if you want to ignore this specific file
+
+# Sensitive JSON files
+*credentials*.json
+*credential*.json
+*secret*.json
+service-account*.json
+*-key.json
+gcloud-key*.json
+mapping_progress.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -148,6 +157,23 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Additional secrets and credentials
+*.key
+*.pem
+*.p12
+*.pfx
+*_secret.*
+*_creds.*
+secrets.yaml
+secrets.yml
+.secrets
+.credentials
+.token
+*.token
+auth_token
+.aws/credentials
+.gcp/*.json
 
 # Spyder project settings
 .spyderproject

@@ -207,7 +207,7 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div>
-            <h1>Budget Planner</h1>
+            <h1>Budget Planner Claude</h1>
             <p>Map your expenses to budget categories</p>
           </div>
           <nav className="page-nav">
