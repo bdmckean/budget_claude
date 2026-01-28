@@ -5,8 +5,9 @@ import FileUpload from './components/FileUpload';
 import MappingInterface from './components/MappingInterface';
 import Stats from './components/Stats';
 import Analytics from './components/Analytics';
+import config from './config';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 function App() {
   const [progress, setProgress] = useState(null);

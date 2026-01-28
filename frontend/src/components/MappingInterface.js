@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import './MappingInterface.css';
 import ReviewScreen from './ReviewScreen';
+import config from '../config';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 function MappingInterface({ progress, categories, onMapRow, onAddCategory, onConfirmAddCategory, onSuggestCategory }) {
   const [currentIndex, setCurrentIndex] = useState(0);

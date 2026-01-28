@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Analytics.css';
+import config from '../config';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 function Analytics() {
   const [analytics, setAnalytics] = useState(null);
