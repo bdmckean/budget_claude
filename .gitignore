@@ -10,6 +10,7 @@ service-account*.json
 *-key.json
 gcloud-key*.json
 mapping_progress.json
+file_mappings.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
