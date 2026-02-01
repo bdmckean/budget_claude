@@ -22,8 +22,8 @@ tracer = get_tracer()
 
 # Ollama configuration
 # Use host.docker.internal to reach host's Ollama from Docker container
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://host.docker.internal:11434')
-OLLAMA_MODEL = 'llama3.1:8b'
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://host.docker.internal:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 
 # Configuration
 PROGRESS_FILE = Path(__file__).parent.parent / "mapping_progress.json"
@@ -34,34 +34,35 @@ FILE_MAPPINGS_FILE = Path(__file__).parent.parent / "file_mappings.json"
 def load_categories():
     """Load categories from file"""
     if CATEGORIES_FILE.exists():
-        with open(CATEGORIES_FILE, 'r') as f:
+        with open(CATEGORIES_FILE, "r") as f:
             return json.load(f)
     return []
 
 
 def save_categories(categories):
     """Save categories to file"""
-    with open(CATEGORIES_FILE, 'w') as f:
+    with open(CATEGORIES_FILE, "w") as f:
         json.dump(categories, f, indent=2)
 
 
 def load_file_mappings():
     """Load file mappings history"""
     if FILE_MAPPINGS_FILE.exists():
-        with open(FILE_MAPPINGS_FILE, 'r') as f:
+        with open(FILE_MAPPINGS_FILE, "r") as f:
             return json.load(f)
     return {"mappings": {}}
 
 
 def save_file_mappings(mappings):
     """Save file mappings to file"""
-    with open(FILE_MAPPINGS_FILE, 'w') as f:
+    with open(FILE_MAPPINGS_FILE, "w") as f:
         json.dump(mappings, f, indent=2)
 
 
 def get_file_mapping_hash(rows):
     """Create a hash of file contents to detect changes"""
     import hashlib
+
     # Use the sorted row data to create a hash
     content = json.dumps(rows, sort_keys=True)
     return hashlib.sha256(content.encode()).hexdigest()
@@ -85,11 +86,11 @@ def build_llm_prompt(transaction_data, categories, previous_mappings):
         examples = "\nHere are examples of previous categorizations:\n"
         # Use up to 100 examples
         for mapping in previous_mappings[-100:]:
-            date = mapping.get('date', 'N/A')
-            amount = mapping.get('amount', 'N/A')
-            description = mapping.get('description', '')
-            category = mapping.get('category', 'N/A')
-            examples += f"- Date: {date} | Amount: {amount} | Description: \"{description}\" → {category}\n"
+            date = mapping.get("date", "N/A")
+            amount = mapping.get("amount", "N/A")
+            description = mapping.get("description", "")
+            category = mapping.get("category", "N/A")
+            examples += f'- Date: {date} | Amount: {amount} | Description: "{description}" → {category}\n'
 
     # Build categories list
     categories_str = ", ".join(categories)
@@ -102,9 +103,9 @@ Available Categories: {categories_str}
 {examples}
 
 Current Transaction to Categorize:
-- Date: {transaction_data.get('Date', 'N/A')}
-- Amount: {transaction_data.get('Amount', 'N/A')}
-- Description: {transaction_data.get('Description', 'N/A')}
+- Date: {transaction_data.get("Date", "N/A")}
+- Amount: {transaction_data.get("Amount", "N/A")}
+- Description: {transaction_data.get("Description", "N/A")}
 
 Based on the description, amount, and available categories, respond with ONLY the category name that best matches this transaction. Do not include any explanation, just the category name.
 
@@ -131,11 +132,11 @@ def build_batch_llm_prompt(transaction_batch, categories, previous_mappings):
         examples = "\nHere are examples of previous categorizations:\n"
         # Use up to 100 examples
         for mapping in previous_mappings[-100:]:
-            date = mapping.get('date', 'N/A')
-            amount = mapping.get('amount', 'N/A')
-            description = mapping.get('description', '')
-            category = mapping.get('category', 'N/A')
-            examples += f"- Date: {date} | Amount: {amount} | Description: \"{description}\" → {category}\n"
+            date = mapping.get("date", "N/A")
+            amount = mapping.get("amount", "N/A")
+            description = mapping.get("description", "")
+            category = mapping.get("category", "N/A")
+            examples += f'- Date: {date} | Amount: {amount} | Description: "{description}" → {category}\n'
 
     # Build categories list
     categories_str = ", ".join(categories)
@@ -143,10 +144,12 @@ def build_batch_llm_prompt(transaction_batch, categories, previous_mappings):
     # Build transactions list with row indices
     transactions_str = ""
     for idx, transaction_data in transaction_batch:
-        date = transaction_data.get('Date', transaction_data.get('Transaction Date', 'N/A'))
-        amount = transaction_data.get('Amount', 'N/A')
-        description = transaction_data.get('Description', 'N/A')
-        transactions_str += f"Row {idx}: Date: {date} | Amount: {amount} | Description: \"{description}\"\n"
+        date = transaction_data.get(
+            "Date", transaction_data.get("Transaction Date", "N/A")
+        )
+        amount = transaction_data.get("Amount", "N/A")
+        description = transaction_data.get("Description", "N/A")
+        transactions_str += f'Row {idx}: Date: {date} | Amount: {amount} | Description: "{description}"\n'
 
     # Build the full prompt for batch processing
     prompt = f"""You are a budget categorization assistant. Based on transaction details, suggest the most appropriate budget category for each transaction.
@@ -197,18 +200,18 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                 trace,
                 name="build_prompt",
                 output_text=f"Prompt built ({len(prompt)} chars)",
-                metadata={"prompt_length": len(prompt)}
+                metadata={"prompt_length": len(prompt)},
             )
 
         response = requests.post(
-            f'{OLLAMA_API_URL}/api/generate',
+            f"{OLLAMA_API_URL}/api/generate",
             json={
-                'model': OLLAMA_MODEL,
-                'prompt': prompt,
-                'stream': False,
-                'temperature': 0.3  # Lower temperature for more consistent results
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "temperature": 0.3,  # Lower temperature for more consistent results
             },
-            timeout=30
+            timeout=30,
         )
 
         if response.status_code != 200:
@@ -217,16 +220,16 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                     trace,
                     name="ollama_error",
                     input_text=f"Status {response.status_code}",
-                    metadata={"error": True, "status_code": response.status_code}
+                    metadata={"error": True, "status_code": response.status_code},
                 )
             return {
-                'success': False,
-                'error': f'Ollama API error: {response.status_code}',
-                'suggestion': None
+                "success": False,
+                "error": f"Ollama API error: {response.status_code}",
+                "suggestion": None,
             }
 
         response_data = response.json()
-        response_text = response_data.get('response', '').strip()
+        response_text = response_data.get("response", "").strip()
 
         # Log the LLM generation
         if trace:
@@ -243,12 +246,12 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                 metadata={
                     "temperature": 0.3,
                     "ollama_host": OLLAMA_API_URL,
-                    "transaction_description": transaction_data.get("Description", "")
-                }
+                    "transaction_description": transaction_data.get("Description", ""),
+                },
             )
 
         # Clean up the response - remove extra whitespace and quotes
-        suggestion = response_text.strip().strip('"\'')
+        suggestion = response_text.strip().strip("\"'")
 
         # Validate that suggestion is one of the available categories
         if suggestion not in categories:
@@ -265,12 +268,12 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                         name="validation_error",
                         input_text=f"Invalid category: {suggestion}",
                         output_text="Validation failed",
-                        metadata={"error": True, "suggested": suggestion}
+                        metadata={"error": True, "suggested": suggestion},
                     )
                 return {
-                    'success': False,
-                    'error': f'LLM suggested invalid category: {suggestion}',
-                    'suggestion': None
+                    "success": False,
+                    "error": f"LLM suggested invalid category: {suggestion}",
+                    "suggestion": None,
                 }
 
         # Log successful categorization
@@ -280,14 +283,10 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                 name="validation_success",
                 input_text=f"Validated category: {suggestion}",
                 output_text="Validation passed",
-                metadata={"category": suggestion}
+                metadata={"category": suggestion},
             )
 
-        return {
-            'success': True,
-            'suggestion': suggestion,
-            'error': None
-        }
+        return {"success": True, "suggestion": suggestion, "error": None}
 
     except requests.exceptions.ConnectionError:
         if trace:
@@ -296,12 +295,13 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                 name="connection_error",
                 input_text="Ollama connection",
                 output_text=f"Failed to connect to {OLLAMA_API_URL}",
-                metadata={"error": True, "error_type": "ConnectionError"}
+                metadata={"error": True, "error_type": "ConnectionError"},
             )
         return {
-            'success': False,
-            'error': 'Could not connect to Ollama. Make sure Ollama is running on ' + OLLAMA_API_URL,
-            'suggestion': None
+            "success": False,
+            "error": "Could not connect to Ollama. Make sure Ollama is running on "
+            + OLLAMA_API_URL,
+            "suggestion": None,
         }
     except Exception as e:
         if trace:
@@ -310,16 +310,14 @@ def get_llm_suggestion(transaction_data, categories, previous_mappings, trace=No
                 name="unexpected_error",
                 input_text=type(e).__name__,
                 output_text=str(e),
-                metadata={"error": True, "error_type": type(e).__name__}
+                metadata={"error": True, "error_type": type(e).__name__},
             )
-        return {
-            'success': False,
-            'error': str(e),
-            'suggestion': None
-        }
+        return {"success": False, "error": str(e), "suggestion": None}
 
 
-def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, trace=None):
+def get_batch_llm_suggestions(
+    transaction_batch, categories, previous_mappings, trace=None
+):
     """
     Get category suggestions for a batch of transactions (up to 5 at a time).
 
@@ -335,21 +333,23 @@ def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, 
     results = {}
 
     try:
-        prompt = build_batch_llm_prompt(transaction_batch, categories, previous_mappings)
+        prompt = build_batch_llm_prompt(
+            transaction_batch, categories, previous_mappings
+        )
 
         response = requests.post(
-            f'{OLLAMA_API_URL}/api/generate',
+            f"{OLLAMA_API_URL}/api/generate",
             json={
-                'model': OLLAMA_MODEL,
-                'prompt': prompt,
-                'stream': False,
-                'temperature': 0.3  # Lower temperature for more consistent results
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "temperature": 0.3,  # Lower temperature for more consistent results
             },
-            timeout=60  # Batch processing takes longer (60 seconds for 5 items)
+            timeout=60,  # Batch processing takes longer (60 seconds for 5 items)
         )
 
         if response.status_code != 200:
-            error_msg = f'Ollama API error: {response.status_code}'
+            error_msg = f"Ollama API error: {response.status_code}"
 
             # Log the failed LLM call to Langfuse
             if trace:
@@ -362,20 +362,20 @@ def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, 
                     metadata={
                         "error": True,
                         "status_code": response.status_code,
-                        "batch_size": len(transaction_batch)
-                    }
+                        "batch_size": len(transaction_batch),
+                    },
                 )
 
             # Return error for all items in batch
             for idx, _ in transaction_batch:
                 results[idx] = {
-                    'success': False,
-                    'error': error_msg,
-                    'suggestion': None
+                    "success": False,
+                    "error": error_msg,
+                    "suggestion": None,
                 }
             return results
 
-        response_text = response.json().get('response', '').strip()
+        response_text = response.json().get("response", "").strip()
 
         # Log the successful LLM call to Langfuse
         if trace:
@@ -388,26 +388,29 @@ def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, 
                 metadata={
                     "success": True,
                     "batch_size": len(transaction_batch),
-                    "response_length": len(response_text)
-                }
+                    "response_length": len(response_text),
+                },
             )
 
         # Log progress for this batch
         batch_indices = [idx for idx, _ in transaction_batch]
-        print(f"LLM batch processed: rows {batch_indices[0]}-{batch_indices[-1]} ({len(transaction_batch)} items)", flush=True)
+        print(
+            f"LLM batch processed: rows {batch_indices[0]}-{batch_indices[-1]} ({len(transaction_batch)} items)",
+            flush=True,
+        )
 
         # Parse batch response - expect lines in format: "Row <idx>: <CATEGORY>"
-        lines = response_text.split('\n')
+        lines = response_text.split("\n")
         parsed_suggestions = {}
 
         for line in lines:
             line = line.strip()
-            if not line or not line.startswith('Row'):
+            if not line or not line.startswith("Row"):
                 continue
 
             try:
                 # Parse "Row <idx>: <CATEGORY>" format
-                parts = line.split(':', 1)
+                parts = line.split(":", 1)
                 if len(parts) != 2:
                     continue
 
@@ -415,11 +418,11 @@ def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, 
                 category_part = parts[1].strip()  # "<CATEGORY>"
 
                 # Extract row index
-                row_idx = row_part.replace('Row', '').strip()
+                row_idx = row_part.replace("Row", "").strip()
                 row_idx = int(row_idx)
 
                 # Clean up category
-                suggestion = category_part.strip().strip('"\'')
+                suggestion = category_part.strip().strip("\"'")
 
                 # Validate category
                 if suggestion not in categories:
@@ -441,36 +444,31 @@ def get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, 
         for idx, _ in transaction_batch:
             if idx in parsed_suggestions and parsed_suggestions[idx]:
                 results[idx] = {
-                    'success': True,
-                    'suggestion': parsed_suggestions[idx],
-                    'error': None
+                    "success": True,
+                    "suggestion": parsed_suggestions[idx],
+                    "error": None,
                 }
             else:
                 results[idx] = {
-                    'success': False,
-                    'error': f'LLM did not provide valid category for row {idx}',
-                    'suggestion': None
+                    "success": False,
+                    "error": f"LLM did not provide valid category for row {idx}",
+                    "suggestion": None,
                 }
 
         return results
 
     except requests.exceptions.ConnectionError:
-        error_msg = 'Could not connect to Ollama. Make sure Ollama is running on ' + OLLAMA_API_URL
+        error_msg = (
+            "Could not connect to Ollama. Make sure Ollama is running on "
+            + OLLAMA_API_URL
+        )
         for idx, _ in transaction_batch:
-            results[idx] = {
-                'success': False,
-                'error': error_msg,
-                'suggestion': None
-            }
+            results[idx] = {"success": False, "error": error_msg, "suggestion": None}
         return results
     except Exception as e:
         error_msg = str(e)
         for idx, _ in transaction_batch:
-            results[idx] = {
-                'success': False,
-                'error': error_msg,
-                'suggestion': None
-            }
+            results[idx] = {"success": False, "error": error_msg, "suggestion": None}
         return results
 
 
@@ -492,7 +490,7 @@ def validate_and_correct_category(category_name):
             "original": category_name,
             "corrected": corrected,
             "has_corrections": True,
-            "corrections": ["Category name cannot be empty"]
+            "corrections": ["Category name cannot be empty"],
         }
 
     # Check length
@@ -517,7 +515,7 @@ def validate_and_correct_category(category_name):
         corrected = corrected_capitalized
 
     # Remove special characters except common ones (spaces, &, -, /)
-    cleaned = re.sub(r'[^a-zA-Z0-9\s&\-/]', '', corrected)
+    cleaned = re.sub(r"[^a-zA-Z0-9\s&\-/]", "", corrected)
     if cleaned != corrected:
         corrections.append(f"Removed invalid characters: '{corrected}' → '{cleaned}'")
         corrected = cleaned
@@ -526,7 +524,7 @@ def validate_and_correct_category(category_name):
         "original": category_name,
         "corrected": corrected,
         "has_corrections": len(corrections) > 0,
-        "corrections": corrections
+        "corrections": corrections,
     }
 
 
@@ -541,9 +539,9 @@ def is_row_valid(row):
         Boolean indicating if row is valid (has required fields)
     """
     # Check for common field names (handle variations)
-    date_field = row.get('Date') or row.get('Transaction Date') or row.get('date')
-    description_field = row.get('Description') or row.get('description')
-    amount_field = row.get('Amount') or row.get('amount')
+    date_field = row.get("Date") or row.get("Transaction Date") or row.get("date")
+    description_field = row.get("Description") or row.get("description")
+    amount_field = row.get("Amount") or row.get("amount")
 
     # Row is valid if all required fields are present and non-empty
     if not date_field or not str(date_field).strip():
@@ -559,30 +557,25 @@ def is_row_valid(row):
 def load_progress():
     """Load existing progress from file"""
     if PROGRESS_FILE.exists():
-        with open(PROGRESS_FILE, 'r') as f:
+        with open(PROGRESS_FILE, "r") as f:
             return json.load(f)
-    return {
-        "file_name": None,
-        "rows": {},
-        "total_rows": 0,
-        "last_updated": None
-    }
+    return {"file_name": None, "rows": {}, "total_rows": 0, "last_updated": None}
 
 
 def save_progress(progress_data):
     """Save progress to file"""
     progress_data["last_updated"] = datetime.now().isoformat()
-    with open(PROGRESS_FILE, 'w') as f:
+    with open(PROGRESS_FILE, "w") as f:
         json.dump(progress_data, f, indent=2)
 
 
-@app.route('/api/health', methods=['GET'])
+@app.route("/api/health", methods=["GET"])
 def health():
     """Health check endpoint"""
     return jsonify({"status": "ok"}), 200
 
 
-@app.route('/api/categories', methods=['GET'])
+@app.route("/api/categories", methods=["GET"])
 def get_categories():
     """Get list of budget categories"""
     categories = load_categories()
@@ -591,21 +584,21 @@ def get_categories():
     return jsonify({"categories": categories}), 200
 
 
-@app.route('/api/progress', methods=['GET'])
+@app.route("/api/progress", methods=["GET"])
 def get_progress():
     """Get current progress"""
     progress = load_progress()
     return jsonify(progress), 200
 
 
-@app.route('/api/upload', methods=['POST'])
+@app.route("/api/upload", methods=["POST"])
 def upload_file():
     """Handle file upload and parse CSV/Excel"""
-    if 'file' not in request.files:
+    if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
-    file = request.files['file']
-    if file.filename == '':
+    file = request.files["file"]
+    if file.filename == "":
         return jsonify({"error": "No file selected"}), 400
 
     try:
@@ -614,9 +607,10 @@ def upload_file():
 
         # Read file content - check extensions case-insensitively
         filename_lower = file.filename.lower()
-        if filename_lower.endswith('.csv'):
+        if filename_lower.endswith(".csv"):
             import csv
-            lines = file.read().decode('utf-8').split('\n')
+
+            lines = file.read().decode("utf-8").split("\n")
             reader = csv.DictReader(lines)
             all_rows = list(reader)
             # Filter out invalid rows (missing required fields)
@@ -624,13 +618,15 @@ def upload_file():
             skipped_count = len(all_rows) - len(rows)
             if skipped_count > 0:
                 print(f"Skipped {skipped_count} incomplete row(s) from CSV", flush=True)
-        elif filename_lower.endswith('.json'):
-            all_rows = json.loads(file.read().decode('utf-8'))
+        elif filename_lower.endswith(".json"):
+            all_rows = json.loads(file.read().decode("utf-8"))
             # Filter out invalid rows
             rows = [row for row in all_rows if is_row_valid(row)]
             skipped_count = len(all_rows) - len(rows)
             if skipped_count > 0:
-                print(f"Skipped {skipped_count} incomplete row(s) from JSON", flush=True)
+                print(
+                    f"Skipped {skipped_count} incomplete row(s) from JSON", flush=True
+                )
         else:
             return jsonify({"error": "Unsupported file format. Use CSV or JSON"}), 400
 
@@ -658,7 +654,7 @@ def upload_file():
                         progress["rows"][row_key] = {
                             "data": row,
                             "category": previous_rows[row_key],
-                            "mapped": True
+                            "mapped": True,
                         }
                         restored_count += 1
                     else:
@@ -666,34 +662,37 @@ def upload_file():
                         progress["rows"][row_key] = {
                             "data": row,
                             "category": None,
-                            "mapped": False
+                            "mapped": False,
                         }
-                print(f"Restored {restored_count} previously mapped rows for '{file.filename}'", flush=True)
+                print(
+                    f"Restored {restored_count} previously mapped rows for '{file.filename}'",
+                    flush=True,
+                )
             else:
                 # File changed - reset all mappings
                 file_mappings["mappings"][file.filename] = {
                     "file_hash": file_hash,
-                    "rows": {}
+                    "rows": {},
                 }
                 for idx, row in enumerate(rows):
                     row_key = str(idx)
                     progress["rows"][row_key] = {
                         "data": row,
                         "category": None,
-                        "mapped": False
+                        "mapped": False,
                     }
         else:
             # New file - initialize all rows as unmapped
             file_mappings["mappings"][file.filename] = {
                 "file_hash": file_hash,
-                "rows": {}
+                "rows": {},
             }
             for idx, row in enumerate(rows):
                 row_key = str(idx)
                 progress["rows"][row_key] = {
                     "data": row,
                     "category": None,
-                    "mapped": False
+                    "mapped": False,
                 }
 
         save_progress(progress)
@@ -703,7 +702,7 @@ def upload_file():
             "success": True,
             "file_name": file.filename,
             "total_rows": len(rows),
-            "progress": progress
+            "progress": progress,
         }
 
         # Build informational messages
@@ -713,9 +712,13 @@ def upload_file():
         if file.filename in file_mappings["mappings"]:
             previous_mapping = file_mappings["mappings"][file.filename]
             if previous_mapping.get("file_hash") == file_hash:
-                restored_count = len([r for r in progress["rows"].values() if r.get("mapped")])
+                restored_count = len(
+                    [r for r in progress["rows"].values() if r.get("mapped")]
+                )
                 if restored_count > 0:
-                    messages.append(f"Restored {restored_count} previously mapped row(s)")
+                    messages.append(
+                        f"Restored {restored_count} previously mapped row(s)"
+                    )
 
         # Add skipped count info if any rows were skipped
         if skipped_count > 0:
@@ -731,19 +734,18 @@ def upload_file():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/suggest-category', methods=['POST'])
+@app.route("/api/suggest-category", methods=["POST"])
 def suggest_category():
     """Suggest a category using LLM based on transaction data"""
     # Create a trace for this operation
     trace = tracer.create_trace(
-        name="suggest_category",
-        metadata={"endpoint": "/api/suggest-category"}
+        name="suggest_category", metadata={"endpoint": "/api/suggest-category"}
     )
 
     try:
         data = request.json
-        row_index = data.get('row_index')
-        transaction_data = data.get('transaction_data', {})
+        row_index = data.get("row_index")
+        transaction_data = data.get("transaction_data", {})
 
         # Log the request
         if trace:
@@ -752,8 +754,8 @@ def suggest_category():
                 name="parse_request",
                 metadata={
                     "row_index": row_index,
-                    "description": transaction_data.get("Description", "")
-                }
+                    "description": transaction_data.get("Description", ""),
+                },
             )
 
         # Load categories and progress
@@ -766,24 +768,25 @@ def suggest_category():
                     trace,
                     name="no_categories_error",
                     output_text="No categories available",
-                    metadata={"error": True}
+                    metadata={"error": True},
                 )
-            return jsonify({
-                "error": "No categories available",
-                "suggestion": None
-            }), 400
+            return jsonify(
+                {"error": "No categories available", "suggestion": None}
+            ), 400
 
         # Get previous mappings as examples (mapped rows) - include full details
         previous_mappings = []
         if progress.get("rows"):
             for row_data in progress["rows"].values():
                 if row_data.get("mapped") and row_data.get("category"):
-                    previous_mappings.append({
-                        "date": row_data["data"].get("Date", ""),
-                        "amount": row_data["data"].get("Amount", ""),
-                        "description": row_data["data"].get("Description", ""),
-                        "category": row_data["category"]
-                    })
+                    previous_mappings.append(
+                        {
+                            "date": row_data["data"].get("Date", ""),
+                            "amount": row_data["data"].get("Amount", ""),
+                            "description": row_data["data"].get("Description", ""),
+                            "category": row_data["category"],
+                        }
+                    )
 
         if trace:
             tracer.add_span(
@@ -791,39 +794,41 @@ def suggest_category():
                 name="load_context",
                 metadata={
                     "categories_count": len(categories),
-                    "previous_mappings_count": len(previous_mappings)
-                }
+                    "previous_mappings_count": len(previous_mappings),
+                },
             )
 
         # Get LLM suggestion
-        result = get_llm_suggestion(transaction_data, categories, previous_mappings, trace=trace)
+        result = get_llm_suggestion(
+            transaction_data, categories, previous_mappings, trace=trace
+        )
 
-        if result['success']:
+        if result["success"]:
             if trace:
                 tracer.add_span(
                     trace,
                     name="categorization_success",
                     output_text=f"Categorized as: {result['suggestion']}",
-                    metadata={"category": result['suggestion']}
+                    metadata={"category": result["suggestion"]},
                 )
-            return jsonify({
-                "success": True,
-                "suggestion": result['suggestion'],
-                "row_index": row_index
-            }), 200
+            return jsonify(
+                {
+                    "success": True,
+                    "suggestion": result["suggestion"],
+                    "row_index": row_index,
+                }
+            ), 200
         else:
             if trace:
                 tracer.add_span(
                     trace,
                     name="categorization_failed",
-                    output_text=result['error'],
-                    metadata={"error": True}
+                    output_text=result["error"],
+                    metadata={"error": True},
                 )
-            return jsonify({
-                "success": False,
-                "error": result['error'],
-                "suggestion": None
-            }), 500
+            return jsonify(
+                {"success": False, "error": result["error"], "suggestion": None}
+            ), 500
     except Exception as e:
         print(f"Error in suggest_category: {str(e)}", flush=True)
         if trace:
@@ -832,13 +837,11 @@ def suggest_category():
                 name="exception",
                 input_text=type(e).__name__,
                 output_text=str(e),
-                metadata={"error": True, "error_type": type(e).__name__}
+                metadata={"error": True, "error_type": type(e).__name__},
             )
-        return jsonify({
-            "success": False,
-            "error": f"Server error: {str(e)}",
-            "suggestion": None
-        }), 500
+        return jsonify(
+            {"success": False, "error": f"Server error: {str(e)}", "suggestion": None}
+        ), 500
     finally:
         # Flush the trace
         if tracer.is_enabled():
@@ -848,14 +851,11 @@ def suggest_category():
                 pass
 
 
-@app.route('/api/bulk-map', methods=['POST'])
+@app.route("/api/bulk-map", methods=["POST"])
 def bulk_map():
     """Bulk map all unmapped rows using AI with batch processing"""
     # Create a trace for bulk operation
-    trace = tracer.create_trace(
-        name="bulk_map",
-        metadata={"endpoint": "/api/bulk-map"}
-    )
+    trace = tracer.create_trace(name="bulk_map", metadata={"endpoint": "/api/bulk-map"})
 
     try:
         progress = load_progress()
@@ -868,17 +868,13 @@ def bulk_map():
                     trace,
                     name="no_categories",
                     output_text="No categories available",
-                    metadata={"error": True}
+                    metadata={"error": True},
                 )
-            return jsonify({
-                "success": False,
-                "error": "No categories available"
-            }), 400
+            return jsonify({"success": False, "error": "No categories available"}), 400
 
         # Find unmapped rows
         unmapped_indices = [
-            idx for idx, row_data in rows.items()
-            if not row_data.get("mapped", False)
+            idx for idx, row_data in rows.items() if not row_data.get("mapped", False)
         ]
 
         if not unmapped_indices:
@@ -887,26 +883,30 @@ def bulk_map():
                     trace,
                     name="all_mapped",
                     output_text="No unmapped rows",
-                    metadata={"unmapped_count": 0}
+                    metadata={"unmapped_count": 0},
                 )
-            return jsonify({
-                "success": True,
-                "message": "All items already mapped",
-                "mappings": {},
-                "unmapped_count": 0,
-                "progress": {"current": 0, "total": 0}
-            }), 200
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "All items already mapped",
+                    "mappings": {},
+                    "unmapped_count": 0,
+                    "progress": {"current": 0, "total": 0},
+                }
+            ), 200
 
         # Get previous mappings for context
         previous_mappings = []
         for row_data in rows.values():
             if row_data.get("mapped") and row_data.get("category"):
-                previous_mappings.append({
-                    "date": row_data["data"].get("Transaction Date", ""),
-                    "amount": row_data["data"].get("Amount", ""),
-                    "description": row_data["data"].get("Description", ""),
-                    "category": row_data["category"]
-                })
+                previous_mappings.append(
+                    {
+                        "date": row_data["data"].get("Transaction Date", ""),
+                        "amount": row_data["data"].get("Amount", ""),
+                        "description": row_data["data"].get("Description", ""),
+                        "category": row_data["category"],
+                    }
+                )
 
         if trace:
             tracer.add_span(
@@ -914,8 +914,8 @@ def bulk_map():
                 name="bulk_operation_start",
                 metadata={
                     "total_unmapped": len(unmapped_indices),
-                    "context_mappings": len(previous_mappings)
-                }
+                    "context_mappings": len(previous_mappings),
+                },
             )
 
         # Process in batches of 5 rows
@@ -931,8 +931,7 @@ def bulk_map():
 
             # Create batch of (idx, transaction_data) tuples
             transaction_batch = [
-                (idx, rows[idx].get("data", {}))
-                for idx in batch_indices
+                (idx, rows[idx].get("data", {})) for idx in batch_indices
             ]
 
             # Create a trace for this batch
@@ -941,12 +940,14 @@ def bulk_map():
                 metadata={
                     "batch_start": batch_start,
                     "batch_size": len(batch_indices),
-                    "row_indices": batch_indices
-                }
+                    "row_indices": batch_indices,
+                },
             )
 
             # Get batch suggestions using optimized batch prompt
-            batch_results = get_batch_llm_suggestions(transaction_batch, categories, previous_mappings, trace=batch_trace)
+            batch_results = get_batch_llm_suggestions(
+                transaction_batch, categories, previous_mappings, trace=batch_trace
+            )
 
             # Flush the batch trace to send it to Langfuse
             if batch_trace and tracer.is_enabled():
@@ -960,31 +961,36 @@ def bulk_map():
                 transaction_data = rows[idx].get("data", {})
                 processed_count += 1
 
-                if result_info.get('success') and result_info.get('suggestion'):
+                if result_info.get("success") and result_info.get("suggestion"):
                     mappings[idx] = {
                         "data": transaction_data,
-                        "suggestion": result_info['suggestion'],
-                        "confirmed": False
+                        "suggestion": result_info["suggestion"],
+                        "confirmed": False,
                     }
 
                     # Add to previous mappings for context in future batches
-                    previous_mappings.append({
-                        "date": transaction_data.get("Transaction Date", ""),
-                        "amount": transaction_data.get("Amount", ""),
-                        "description": transaction_data.get("Description", ""),
-                        "category": result_info['suggestion']
-                    })
+                    previous_mappings.append(
+                        {
+                            "date": transaction_data.get("Transaction Date", ""),
+                            "amount": transaction_data.get("Amount", ""),
+                            "description": transaction_data.get("Description", ""),
+                            "category": result_info["suggestion"],
+                        }
+                    )
                 else:
                     mappings[idx] = {
                         "data": transaction_data,
                         "suggestion": None,
-                        "error": result_info.get('error', 'Unknown error'),
-                        "confirmed": False
+                        "error": result_info.get("error", "Unknown error"),
+                        "confirmed": False,
                     }
 
                 # Log progress
                 progress_pct = (processed_count / total_rows) * 100
-                print(f"Bulk map progress: {processed_count}/{total_rows} ({progress_pct:.0f}%)", flush=True)
+                print(
+                    f"Bulk map progress: {processed_count}/{total_rows} ({progress_pct:.0f}%)",
+                    flush=True,
+                )
 
         if trace:
             tracer.add_span(
@@ -993,18 +999,24 @@ def bulk_map():
                 output_text=f"Generated suggestions for {len(mappings)} items",
                 metadata={
                     "total_processed": len(mappings),
-                    "successful": sum(1 for m in mappings.values() if m.get('suggestion')),
-                    "failed": sum(1 for m in mappings.values() if not m.get('suggestion'))
-                }
+                    "successful": sum(
+                        1 for m in mappings.values() if m.get("suggestion")
+                    ),
+                    "failed": sum(
+                        1 for m in mappings.values() if not m.get("suggestion")
+                    ),
+                },
             )
 
-        return jsonify({
-            "success": True,
-            "message": f"Generated suggestions for {len(mappings)} items",
-            "mappings": mappings,
-            "unmapped_count": len(unmapped_indices),
-            "progress": {"current": total_rows, "total": total_rows}
-        }), 200
+        return jsonify(
+            {
+                "success": True,
+                "message": f"Generated suggestions for {len(mappings)} items",
+                "mappings": mappings,
+                "unmapped_count": len(unmapped_indices),
+                "progress": {"current": total_rows, "total": total_rows},
+            }
+        ), 200
 
     except Exception as e:
         print(f"Error in bulk_map: {str(e)}", flush=True)
@@ -1014,12 +1026,9 @@ def bulk_map():
                 name="exception",
                 input_text=type(e).__name__,
                 output_text=str(e),
-                metadata={"error": True}
+                metadata={"error": True},
             )
-        return jsonify({
-            "success": False,
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"success": False, "error": f"Server error: {str(e)}"}), 500
     finally:
         # Flush the trace
         if tracer.is_enabled():
@@ -1029,11 +1038,11 @@ def bulk_map():
                 pass
 
 
-@app.route('/api/add-category', methods=['POST'])
+@app.route("/api/add-category", methods=["POST"])
 def add_category():
     """Add a new custom category"""
     data = request.json
-    category_name = data.get('category_name', '').strip()
+    category_name = data.get("category_name", "").strip()
 
     if not category_name:
         return jsonify({"error": "Category name is required"}), 400
@@ -1048,23 +1057,27 @@ def add_category():
     category_lower = validation["corrected"].lower()
     for cat in categories:
         if cat.lower() == category_lower:
-            return jsonify({
-                "error": f"Category '{validation['corrected']}' already exists",
-                "validation": validation
-            }), 400
+            return jsonify(
+                {
+                    "error": f"Category '{validation['corrected']}' already exists",
+                    "validation": validation,
+                }
+            ), 400
 
     # Return validation result for user confirmation
-    return jsonify({
-        "validation": validation,
-        "action": "confirm" if validation["has_corrections"] else "add"
-    }), 200
+    return jsonify(
+        {
+            "validation": validation,
+            "action": "confirm" if validation["has_corrections"] else "add",
+        }
+    ), 200
 
 
-@app.route('/api/confirm-add-category', methods=['POST'])
+@app.route("/api/confirm-add-category", methods=["POST"])
 def confirm_add_category():
     """Confirm and add the category after user approval"""
     data = request.json
-    corrected_category = data.get('category', '').strip()
+    corrected_category = data.get("category", "").strip()
 
     if not corrected_category:
         return jsonify({"error": "Category name is required"}), 400
@@ -1076,7 +1089,9 @@ def confirm_add_category():
     category_lower = corrected_category.lower()
     for cat in categories:
         if cat.lower() == category_lower:
-            return jsonify({"error": f"Category '{corrected_category}' already exists"}), 400
+            return jsonify(
+                {"error": f"Category '{corrected_category}' already exists"}
+            ), 400
 
     # Add new category
     categories.append(corrected_category)
@@ -1084,19 +1099,21 @@ def confirm_add_category():
     categories.sort(key=str.lower)
     save_categories(categories)
 
-    return jsonify({
-        "success": True,
-        "message": f"Category '{corrected_category}' added successfully",
-        "categories": categories
-    }), 201
+    return jsonify(
+        {
+            "success": True,
+            "message": f"Category '{corrected_category}' added successfully",
+            "categories": categories,
+        }
+    ), 201
 
 
-@app.route('/api/map-row', methods=['POST'])
+@app.route("/api/map-row", methods=["POST"])
 def map_row():
     """Map a row to a category"""
     data = request.json
-    row_idx = data.get('row_index')
-    category = data.get('category')
+    row_idx = data.get("row_index")
+    category = data.get("category")
 
     categories = load_categories()
     if category not in categories:
@@ -1125,7 +1142,7 @@ def map_row():
         if file_name not in file_mappings["mappings"]:
             file_mappings["mappings"][file_name] = {
                 "file_hash": current_file_hash,
-                "rows": {}
+                "rows": {},
             }
         else:
             # Update hash if not set
@@ -1135,19 +1152,21 @@ def map_row():
         file_mappings["mappings"][file_name]["rows"][row_key] = category
         save_file_mappings(file_mappings)
 
-    return jsonify({
-        "success": True,
-        "row_index": row_idx,
-        "category": category,
-        "progress": progress
-    }), 200
+    return jsonify(
+        {
+            "success": True,
+            "row_index": row_idx,
+            "category": category,
+            "progress": progress,
+        }
+    ), 200
 
 
-@app.route('/api/reset-file', methods=['POST'])
+@app.route("/api/reset-file", methods=["POST"])
 def reset_file():
     """Reset all mappings for the current file"""
     data = request.json
-    file_name = data.get('file_name')
+    file_name = data.get("file_name")
 
     if not file_name:
         return jsonify({"error": "file_name is required"}), 400
@@ -1166,14 +1185,16 @@ def reset_file():
             row["mapped"] = False
         save_progress(progress)
 
-    return jsonify({
-        "success": True,
-        "message": f"Reset all mappings for {file_name}",
-        "progress": progress
-    }), 200
+    return jsonify(
+        {
+            "success": True,
+            "message": f"Reset all mappings for {file_name}",
+            "progress": progress,
+        }
+    ), 200
 
 
-@app.route('/api/stats', methods=['GET'])
+@app.route("/api/stats", methods=["GET"])
 def get_stats():
     """Get mapping statistics"""
     progress = load_progress()
@@ -1188,17 +1209,19 @@ def get_stats():
             cat = row.get("category")
             category_counts[cat] = category_counts.get(cat, 0) + 1
 
-    return jsonify({
-        "total_rows": total,
-        "mapped_rows": mapped,
-        "remaining_rows": total - mapped,
-        "category_breakdown": category_counts,
-        "file_name": progress.get("file_name"),
-        "last_updated": progress.get("last_updated")
-    }), 200
+    return jsonify(
+        {
+            "total_rows": total,
+            "mapped_rows": mapped,
+            "remaining_rows": total - mapped,
+            "category_breakdown": category_counts,
+            "file_name": progress.get("file_name"),
+            "last_updated": progress.get("last_updated"),
+        }
+    ), 200
 
 
-@app.route('/api/analytics', methods=['GET'])
+@app.route("/api/analytics", methods=["GET"])
 def get_analytics():
     """Get spending analytics by category and month"""
     try:
@@ -1228,11 +1251,11 @@ def get_analytics():
 
             # Skip payments/credits based on Type field or category
             # Check Type field if present (e.g., "Payment", "Credit")
-            if transaction_type in ['payment', 'credit', 'refund']:
+            if transaction_type in ["payment", "credit", "refund"]:
                 continue
 
             # Skip if categorized as Payment
-            if category and category.lower() == 'payment':
+            if category and category.lower() == "payment":
                 continue
 
             # Convert to absolute value for spending
@@ -1243,21 +1266,43 @@ def get_analytics():
             if amount == 0:
                 continue
 
-            # Parse date - expect format like "12/30/2024"
+            # Parse date - try different formats
             if not date_str:
                 continue
 
-            try:
-                date_parts = date_str.split('/')
-                if len(date_parts) == 3:
-                    month = date_parts[0]
-                    day = date_parts[1]
-                    year = date_parts[2]
-                    month_key = f"{year}-{month:0>2}"  # Format as "2024-12"
-                else:
+            month_key = None
+            date_formats = [
+                "%m/%d/%Y",
+                "%m/%d/%y",  # 12/30/2024, 12/30/24
+                "%Y-%m-%d",  # 2024-12-30
+                "%d-%m-%Y",  # 30-12-2024
+                "%b %d, %Y",  # Dec 30, 2024
+                "%B %d, %Y",  # December 30, 2024
+            ]
+
+            for fmt in date_formats:
+                try:
+                    dt = datetime.strptime(date_str, fmt)
+                    month_key = dt.strftime("%Y-%m")
+                    break
+                except ValueError:
                     continue
-            except:
-                continue
+
+            if not month_key:
+                # Fallback to simple split if no formats match
+                try:
+                    date_parts = date_str.split("/")
+                    if len(date_parts) == 3:
+                        month = date_parts[0]
+                        day = date_parts[1]
+                        year = date_parts[2]
+                        if len(year) == 2:
+                            year = "20" + year
+                        month_key = f"{year}-{month:0>2}"
+                    else:
+                        continue
+                except:
+                    continue
 
             # Initialize month if not exists
             if month_key not in spending_by_month:
@@ -1282,20 +1327,19 @@ def get_analytics():
         sorted_months = sorted(spending_by_month.keys())
         sorted_spending = {month: spending_by_month[month] for month in sorted_months}
 
-        return jsonify({
-            "success": True,
-            "spending_by_month": sorted_spending,
-            "category_totals": category_totals,
-            "months": sorted_months
-        }), 200
+        return jsonify(
+            {
+                "success": True,
+                "spending_by_month": sorted_spending,
+                "category_totals": category_totals,
+                "months": sorted_months,
+            }
+        ), 200
 
     except Exception as e:
         print(f"Error in get_analytics: {str(e)}", flush=True)
-        return jsonify({
-            "success": False,
-            "error": f"Server error: {str(e)}"
-        }), 500
+        return jsonify({"success": False, "error": f"Server error: {str(e)}"}), 500
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
